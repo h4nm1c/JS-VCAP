@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <script src="./js/anychart-core.min.js"></script>
+    <script src="./js/anychart-graph.min.js"></script>
+    <script src="./js/anychart-data-adapter.min.js"></script>
+    <style type="text/css">
+      html, body, #container {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script>
+      anychart.onDocumentReady(function () {
+        anychart.data.loadJsonFile("http://127.0.0.1:5678/data/longpcap.json", function (data) {
+
+        var chart = anychart.graph(data);
+
+        chart.title("long.pcap");
+
+        chart.nodes().labels().enabled(true);
+         
+        chart.nodes().labels().format("{%id}");
+        chart.nodes().labels().fontSize(10);
+        chart.nodes().labels().fontWeight(600);
+
+        let tooltip_box = "<span style='font-weight:bold'>IP:</span> {%id}<br>"
+        tooltip_box += "<span style='font-weight:bold'>Packets:</span> {%total_packet_count} (<span style='font-weight:bold'>S:</span>{%packets_sent}<span style='font-weight:bold'> R:</span>{%packets_received})<br>"
+        tooltip_box += "<span style='font-weight:bold'>Services:</span> {%services}<br>"
+        tooltip_box += "<span style='font-weight:bold'>Ports:</span> {%service_ports}"
+
+        chart.nodes().tooltip().useHtml(true)
+        chart.nodes().tooltip().format(tooltip_box);
+
+        chart.edges().tooltip().useHtml(true);
+        chart.edges().tooltip().format("<span style='font-weight:bold'>{%from}:{%from_port}</span><br>{%proto}<br><span style='font-weight:bold'>{%to}:{%to_port}</span>");
+        chart.container("container").draw();
+        });
+      });
+    </script>
+  </body>
+</html>
