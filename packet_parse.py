@@ -135,7 +135,7 @@ def parse_pcap(capture):
   for packet in capture:
       packet_count += 1
 
-      if packet_count % div_packet_count == 0:
+      if (packet_count % div_packet_count == 0) and progress_count < 10:
         progress_count += 1
         progress_bar[progress_count] = "="
         print_msg(updated_progress_bar(progress_bar, packet_count, total_packets))
