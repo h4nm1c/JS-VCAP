@@ -29,9 +29,9 @@
         chart.nodes().labels().fontWeight(600);
 
         let tooltip_box = "<span style='font-weight:bold'>IP:</span> {%id}<br>"
-        tooltip_box += "<span style='font-weight:bold'>Packets:</span> {%total_packet_count} (<span style='font-weight:bold'>S:</span>{%packets_sent}<span style='font-weight:bold'> R:</span>{%packets_received})<br>"
-        tooltip_box += "<span style='font-weight:bold'>Services:</span> {%services}<br>"
-        tooltip_box += "<span style='font-weight:bold'>Ports:</span> {%service_ports}"
+        tooltip_box += "<span style='font-weight:bold'>Services:</span> {%services} [P: {%service_ports}]<br>"
+        tooltip_box += "<span style='font-weight:bold'>Packets:</span> {%total_packet_count} [S: {%packets_sent}, R: {%packets_received}]<br>"
+        tooltip_box += "<span style='font-weight:bold'>Bytes:</span> {%total_bytes} [S: {%payload_bytes_sent}, R: {%payload_bytes_received}]"
 
         chart.nodes().tooltip().useHtml(true)
         chart.nodes().tooltip().format(tooltip_box);

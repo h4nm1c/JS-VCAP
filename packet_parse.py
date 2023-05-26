@@ -3,7 +3,7 @@ from scapy.all import *
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from datetime import datetime
 
-pcap_file = r"long.pcap"
+pcap_file = r"test.pcap"
 
 variables = {
             "%{HOSTNAME}": "127.0.0.1",
@@ -71,7 +71,7 @@ def get_filesize(file, suffix="b"):
     file_bytes /= 1024.0
   raise FileExistsError(f"{file} is too large...")
 
-def is_server(port):
+def is_service_port(port):
    if port in service_ports.keys():
       return True
    return False
@@ -88,6 +88,10 @@ def summarize_node_graph_data(network_data):
       node["total_packet_count"] = network_data["hosts"][ip]["total_packet_count"]
       node["packets_sent"] = network_data["hosts"][ip]["packets_sent"]
       node["packets_received"] = network_data["hosts"][ip]["packets_received"]
+      node["total_bytes"] = network_data["hosts"][ip]["total_bytes"]  
+      node["payload_bytes_sent"] = network_data["hosts"][ip]["payload_bytes_sent"]
+      node["payload_bytes_received"] = network_data["hosts"][ip]["payload_bytes_received"]
+
       if network_data["hosts"][ip]["is_server"]:
          node["fill"] = { "src": update_data("http://%{HOSTNAME}:%{PORT}/%{SERVER_ICON}") }
          node["service_ports"] = ",".join( network_data["hosts"][ip]["service_ports"])
@@ -141,14 +145,16 @@ def parse_pcap(capture):
         ### DEFINING COMMUNICATION VARIABLES
         src = packet[IP].src
         dst = packet[IP].dst
-
+        packet_bytes = len(packet)
         if TCP in packet:
           src_port = str(packet[TCP].sport)
           dst_port = str(packet[TCP].dport)
+
           proto = "TCP"
         elif UDP in packet:
           src_port = str(packet[UDP].sport)
           dst_port = str(packet[UDP].dport)
+
           proto = "UDP"
         else:
           continue
@@ -161,9 +167,15 @@ def parse_pcap(capture):
           traffic["hosts"][src]["total_packet_count"] = 1
           traffic["hosts"][src]["packets_sent"] = 1
           traffic["hosts"][src]["packets_received"] = 0
+          traffic["hosts"][src]["payload_bytes_sent"] = packet_bytes
+          traffic["hosts"][src]["total_bytes"] = packet_bytes
+          traffic["hosts"][src]["payload_bytes_received"] = 0
         else:
           traffic["hosts"][src]["total_packet_count"] += 1
           traffic["hosts"][src]["packets_sent"] += 1
+          traffic["hosts"][src]["payload_bytes_sent"] += packet_bytes
+          traffic["hosts"][src]["total_bytes"] += packet_bytes
+
 
         if not dst in traffic["hosts"]:
           traffic["hosts"][dst] = {}
@@ -173,16 +185,21 @@ def parse_pcap(capture):
           traffic["hosts"][dst]["total_packet_count"] = 1
           traffic["hosts"][dst]["packets_received"] = 1
           traffic["hosts"][dst]["packets_sent"] = 0
+          traffic["hosts"][dst]["payload_bytes_sent"] = 0
+          traffic["hosts"][dst]["payload_bytes_received"] = packet_bytes
+          traffic["hosts"][dst]["total_bytes"] = packet_bytes
         else:
           traffic["hosts"][dst]["total_packet_count"] += 1
           traffic["hosts"][dst]["packets_received"] += 1
+          traffic["hosts"][dst]["payload_bytes_received"] += packet_bytes
+          traffic["hosts"][dst]["total_bytes"] += packet_bytes
         
-        if is_server(src_port):
+        if is_service_port(src_port):
           traffic["hosts"][src]["services"].add(service_ports[src_port])
           traffic["hosts"][src]["service_ports"].add(src_port)
           traffic["hosts"][src]["is_server"] = True
         
-        if is_server(dst_port):
+        if is_service_port(dst_port):
           traffic["hosts"][dst]["services"].add(service_ports[dst_port])
           traffic["hosts"][dst]["service_ports"].add(dst_port)
           traffic["hosts"][dst]["is_server"] = True
@@ -218,7 +235,7 @@ if __name__ == "__main__":
   ### Node Web Page
   updated_webb_page = update_data(node_network_graph_template)
   create_file("index.html", updated_webb_page)
-  print_msg(update_data("Hosting on ====> http://%{HOSTNAME}:%{PORT}"))
+  print_msg(update_data("Hosting on ==> http://%{HOSTNAME}:%{PORT}"))
 
   ### HTTP Serve
   http_serve()
