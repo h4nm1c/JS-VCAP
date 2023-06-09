@@ -58,7 +58,7 @@ def get_percentage(part, whole):
   return str(round(100 * float(part)/float(whole),1))+"%"
 
 def updated_progress_bar(progress_bar, part, whole):
-  return "".join(progress_bar) + " " + get_percentage(part, whole)
+  return "[" + "".join(progress_bar) + "] " + get_percentage(part, whole)
 
 def print_msg(msg):
   print("[{}]".format(datetime.now().strftime("%H:%M:%S")), msg)
@@ -124,25 +124,30 @@ def parse_pcap(capture):
 
   
   total_packets = len(capture)
+  tenth = total_packets//10
   print_msg(f"Processing {total_packets} packets..")
+  
+  if total_packets >= 10:
+    tenth_numbers = [index * tenth for index in range(1, 11)] 
+    packet_increment = 1
+  else:
+    tenth = total_packets/10
+    tenth_numbers = [index * 1 for index in range(1, 11)]
+    packet_increment = tenth
 
-  div_packet_count = round(total_packets/10,0)
   packet_count = 0
-  progress_count = 0
-  progress_bar = list("[----------]")
+  progress_bar = list("----------")
 
-  print_msg(updated_progress_bar(progress_bar, packet_count, total_packets))
   for packet in capture:
-      packet_count += 1
+      packet_count += packet_increment
 
-      if (packet_count % div_packet_count == 0) and progress_count < 10:
-        progress_count += 1
-        progress_bar[progress_count] = "="
+      if packet_count in tenth_numbers:
+        progress_bar[tenth_numbers.index(packet_count)] = "="
         print_msg(updated_progress_bar(progress_bar, packet_count, total_packets))
+
 
       if IP in packet:
 
-        ### DEFINING COMMUNICATION VARIABLES
         src = packet[IP].src
         dst = packet[IP].dst
         packet_bytes = len(packet)
@@ -203,7 +208,6 @@ def parse_pcap(capture):
           traffic["hosts"][dst]["services"].add(service_ports[dst_port])
           traffic["hosts"][dst]["service_ports"].add(dst_port)
           traffic["hosts"][dst]["is_server"] = True
-
 
 
         ### EDGE DEFINITION
